@@ -1,0 +1,113 @@
+---
+- name: Create Azure VM
+  hosts: localhost
+  tasks:
+    - name: include vars
+      include_vars: "winvars.yml"
+
+    - name: Create a resource group
+      azure_rm_resourcegroup:
+        name: "{{resource_group}}"
+        location: "{{region}}"
+        state: present
+
+    - name: Create Azure Virtual Network
+      azure.azcollection.azure_rm_virtualnetwork:
+        resource_group: "{{resource_group}}"
+        name: "{{vpc_name}}"
+        address_prefixes_cidr:
+          - "10.0.0.0/16"
+        location: "{{region}}"
+        state: present
+      register: vpc_result
+
+    - debug:
+        var: vpc_result
+
+    - name: Create Azure Subnet
+      azure.azcollection.azure_rm_subnet:
+        resource_group: "{{resource_group}}"
+        virtual_network_name: "{{vpc_name}}"
+        name: "{{subnet_name}}"
+        address_prefix: "10.0.0.0/24"
+        state: present
+      register: subnet_result
+
+    - debug:
+        var: subnet_result
+
+    - name: Create Azure VM
+      azure.azcollection.azure_rm_virtualmachine:
+        resource_group: "{{resource_group}}"
+        name: "{{vm_name}}"
+        vm_size: "{{vm_size}}"
+        admin_username: "{{user}}"
+        admin_password: "{{pass}}"
+        image: "{{image}}"
+        location: "{{region}}"
+        os_type: Windows
+        state: present
+      register: result
+
+    - debug:
+        var: result
+
+    - debug:
+        var: result.ansible_facts.azure_vm.properties.networkProfile.networkInterfaces[0].properties.ipConfigurations[0].properties.publicIPAddress.properties.ipAddress
+
+    - name: add new vm as host
+      add_host:
+        name: "{{ result.ansible_facts.azure_vm.properties.networkProfile.networkInterfaces[0].properties.ipConfigurations[0].properties.publicIPAddress.properties.ipAddress }}"
+        groups: Win_VM
+        ansible_user: "{{ user }}"
+        ansible_password: "{{ pass }}"
+        ansible_connection: winrm
+        ansible_winrm_server_cert_validation: ignore
+        ansible_winrm_transport: ntlm
+
+- name: Install Softwares
+  hosts: Win_VM
+  tasks:
+    - name: include vars
+      include_vars: "winvars.yml"
+
+    - name: Download OpenJDK
+      ansible.windows.win_get_url:
+        url: https://download.java.net/java/GA/jdk20.0.2/6e380f22cbe7469fa75fb448bd903d8e/9/GPL/openjdk-20.0.2_windows-x64_bin.zip
+        dest: C:\\Users\\tim\\openjdk-20.0.2_windows-x64_bin.zip
+      register: downloadResult
+
+    - debug:
+        var: downloadResult
+
+    # - name: Install PSCX
+    #   community.windows.win_psmodule:
+    #     name: Pscx
+    #     allow_clobber: true
+    #     state: present
+
+    - name: unzip OpenJDK
+      community.windows.win_unzip:
+        src: C:\\Users\\tim\\openjdk-20.0.2_windows-x64_bin.zip
+        dest: C:\\Java
+        delete_archive: yes
+
+    - name: Get System PATH
+      raw: '[Environment]::GetEnvironmentVariables("Machine").Path'
+      register: path_out
+
+    - debug:
+        var: path_out
+
+    - name: Modify System PATH
+      raw: SETX /M PATH "$([Environment]::GetEnvironmentVariables("Machine").Path | Out-String);{{ item }}"
+      when: path_out.stdout.find(item) == -1
+      with_items:
+        - 'C:\Java\jdk-20.0.2\bin'
+
+    - name: Restart
+      azure_rm_virtualmachine:
+        resource_group: "{{resource_group}}"
+        name: "{{vm_name}}"
+        restarted: yes
+      delegate_to: localhost

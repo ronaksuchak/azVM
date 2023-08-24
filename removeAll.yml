@@ -1,0 +1,15 @@
+- name: Create Azure VM
+  hosts: localhost
+  tasks:
+    - name: include vars
+      include_vars: "winvars.yml"
+
+    - name: Delete a resource group including resources it contains
+      azure_rm_resourcegroup:
+        name: "{{resource_group}}"
+        force_delete_nonempty: yes
+        state: absent
+      register: result
+
+    - debug:
+        var: result

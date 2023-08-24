@@ -1,0 +1,85 @@
+---
+- name: Create Azure VM
+  hosts: localhost
+  tasks:
+    - name: include vars
+      include_vars: "rehlvars.yml"
+
+    - name: Create Azure Virtual Network
+      azure.azcollection.azure_rm_virtualnetwork:
+        resource_group: "{{resource_group}}"
+        name: "{{vpc_name}}"
+        address_prefixes_cidr:
+          - "10.0.0.0/16"
+        location: "{{region}}"
+        state: present
+      register: vpc_result
+
+    - debug:
+        var: vpc_result
+
+    - name: Create Azure Subnet
+      azure.azcollection.azure_rm_subnet:
+        resource_group: "{{resource_group}}"
+        virtual_network_name: "{{vpc_name}}"
+        name: "{{subnet_name}}"
+        address_prefix: "10.0.0.0/24"
+        state: present
+      register: subnet_result
+
+    - debug:
+        var: subnet_result
+
+    - name: Create Azure VM
+      azure.azcollection.azure_rm_virtualmachine:
+        resource_group: "{{resource_group}}"
+        name: "{{vm_name}}"
+        vm_size: "{{vm_size}}"
+        admin_username: "{{user}}"
+        admin_password: "{{pass}}"
+        image: "{{image}}"
+        location: "{{region}}"
+        os_type: Linux
+        state: present
+      register: result
+
+    - debug:
+        var: result
+
+    - debug:
+        var: result.ansible_facts.azure_vm.properties.networkProfile.networkInterfaces[0].properties.ipConfigurations[0].properties.publicIPAddress.properties.ipAddress
+
+    - name: add new vm as host
+      add_host:
+        name: "{{ result.ansible_facts.azure_vm.properties.networkProfile.networkInterfaces[0].properties.ipConfigurations[0].properties.publicIPAddress.properties.ipAddress }}"
+        groups: REHL_VM
+        ansible_ssh_user: "{{user}}"
+        ansible_ssh_pass: "{{pass}}"
+
+- name: Create Azure VM
+  hosts: REHL_VM
+  tasks:
+    - name: Install MySQL server
+      yum:
+        name: mysql-server
+        state: latest
+      become: true
+
+    - name: Start MySQL service
+      service:
+        name: mysqld
+        state: started
+        enabled: yes
+      become: true
+
+    - name: Install Podman
+      yum:
+        name: podman
+        state: present
+      become: true
+
+    - name: Install OpenJDK
+      yum:
+        name: java-1.8.0-openjdk
+        state: present
+      become: true

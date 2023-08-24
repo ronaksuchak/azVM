@@ -1,0 +1,14 @@
+---
+region: eastasia
+resource_group: ansible_resource_group
+vm_name: ansibleWinVM
+user: tim
+pass: ""
+vm_size: Standard_DS2_v2
+vpc_name: ansible_vpc
+subnet_name: ansible_subnet
+image:
+  offer: WindowsServer
+  publisher: MicrosoftWindowsServer
+  sku: 2019-Datacenter
+  version: latest
