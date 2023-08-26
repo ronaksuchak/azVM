@@ -3,12 +3,12 @@ region: eastasia
 resource_group: ansible_resource_group
 vm_name: ansibleRHELVM
 user: tim
-pass: ""
+pass: "tim@AZwinvmPass"
 vm_size: Standard_DS2_v2
 vpc_name: ansible_vpc
 subnet_name: ansible_subnet
 image:
   offer: RHEL
   publisher: RedHat
-  sku: "8_4"
+  sku: '8_4'
   version: latest
