@@ -71,19 +71,19 @@
     - name: include vars
       include_vars: "winvars.yml"
 
-    - name: Download OpenJDK
-      ansible.windows.win_get_url:
-        url: https://developers.redhat.com/content-gateway/file/openjdk/17.0.8/java-17-openjdk-17.0.8.0.7-1.win.x86_64.zip
-        dest: C:\\Users\\tim\\java-17-openjdk-17.0.8.0.7-1.win.x86_64.zip
-      register: downloadResult
+    - name: copy OpenJDK
+      win_copy:
+        src: java-17-openjdk-17.0.8.0.7.zip # Path to the local file on the Ansible control machine
+        dest: C:\\Users\\tim\\java-17-openjdk-17.0.8.0.7.zip # Destination path on the Windows host
+      register: copyResult
 
     - debug:
-        var: downloadResult
+        var: copyResult
 
     - name: unzip OpenJDK
       community.windows.win_unzip:
-        src: C:\\Users\\tim\\java-17-openjdk-17.0.8.0.7-1.win.x86_64.zip
-        dest: C:\\RedHat\\JAVA
+        src: C:\\Users\\tim\\java-17-openjdk-17.0.8.0.7.zip
+        dest: C:\\RedHat\\
         delete_archive: yes
 
     - name: Get System PATH
@@ -100,8 +100,7 @@
         - 'C:\RedHat\Java\jdk-17.0.8.0.7\bin'
 
     - name: Modify System JAVA_HOME
-      raw: SETX /M JAVE_HOME "$([Environment]::GetEnvironmentVariables("Machine").Path | Out-String);{{ item }}"
-      when: path_out.stdout.find(item) == -1
+      raw: SETX /M JAVE_HOME "{{ item }}"
       with_items:
         - 'C:\RedHat\Java\jdk-17.0.8.0.7\bin'
 
