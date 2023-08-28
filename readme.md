@@ -43,11 +43,32 @@ UNREACHABLE! => {"changed": false, "msg": "ntlm: HTTPSConnectionPool(host='20.18
 1. Copy Script to `C:\Users\tim\`
 2. Open Poweshell as Admin
 3. `C:\Users\tim\ConfiguringRemotingForAnsible.ps1`
-4. Re-Run Playbook 
+4. Re-Run Playbook using this command
+`ansible-playbook winVM.yml`
+
+
 
 **NOTE: Re-Running PLaybook will not create another VM**
 
 To Create new VM change VM name using vars file
+---
+## Explanations 
+
+Windows Version: `Microsoft Windows Server 2019-Datacenter`
+
+RHEL OS Version: `Redhat 8.4`
+
+VM Size: `Standard_DS2_v2`
+
+---
+## Versions for RHEL
+All installed software are in latest state meaning,
+if new version is relesed on YUM and u run the playbook it will automatically update it there are no specific version defined
+
+## Versions for Windows
+OpenJDK : 17.0.8.0.7
+Docker and Docker Desktop : latest 
+
 
 
 

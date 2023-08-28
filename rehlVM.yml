@@ -75,11 +75,11 @@
     - name: Install Podman
       yum:
         name: podman
-        state: present
+        state: latest
       become: true
 
     - name: Install OpenJDK
       yum:
         name: java-17-openjdk
-        state: present
+        state: latest
       become: true

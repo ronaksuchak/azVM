@@ -104,7 +104,7 @@
       with_items:
         - 'C:\RedHat\Java\jdk-17.0.8.0.7\bin'
 
-    - name: Install docker-desktop
+    - name: Install Docker Reboot if Required
       win_chocolatey:
         name:
           - chocolatey
